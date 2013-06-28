@@ -1,0 +1,8 @@
+PREFIX fm: http://www.flymine.org/query/rdf/
+
+SELECT ?name
+WHERE {
+	?g :Gene.symbol "eve"
+	?g :Gene.proteins ?p
+	?p :BioEntity.name ?name
+}

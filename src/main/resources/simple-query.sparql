@@ -1,0 +1,6 @@
+PREFIX fm: http://www.flymine.org/query/rdf/
+
+SELECT ?name
+WHERE {
+	?o :Organism.name ?name
+}
