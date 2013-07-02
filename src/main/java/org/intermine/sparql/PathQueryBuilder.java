@@ -25,6 +25,7 @@ public class PathQueryBuilder {
 			try {
 				ns = services.getRootUrl() + "rdf/"
 						+ services.getQueryService().getRelease();
+				System.out.println("Determined namespace to be: " + ns);
 			} catch (ServiceException e) {
 				throw new QueryEvaluationException("Error retrieving release", e);
 			}
@@ -38,9 +39,9 @@ public class PathQueryBuilder {
 			throw new QueryEvaluationException("Can't handle null predicates yet.");
 		}
 		String ns = pred.getNamespace();
-		if (ns == null || !ns.equals(getNS())) {
-			return null;
-		}
+		//if (ns == null || !ns.equals(getNS())) {
+		//	return null;
+		//}
 		Path relationship;
 		try {
 			relationship = new Path(services.getModel(), pred.getLocalName());
@@ -49,7 +50,7 @@ public class PathQueryBuilder {
 		}
 		Path root = relationship.getPrefix();
 		PathQuery pq = new PathQuery(services.getModel());
-		pq.addViews(relationship.toStringNoConstraints(), relationship.getPrefix() + ".id");
+		pq.addViews(root + ".id", relationship.toString());
 		if (subj != null) {
 			pq.addConstraint(Constraints.eq(root + ".id", ((URI) subj).getLocalName()));
 		}

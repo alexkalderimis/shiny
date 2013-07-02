@@ -24,14 +24,16 @@ public class PathQueryStatementIteration implements
 	private ValueFactory valueFactory;
 
 	public PathQueryStatementIteration(
-			PathQuery pq, QueryService queryService,
+			PathQuery pq, QueryService queryService, ValueFactory valueFactory, 
 			BindingInfo bindingInfo) {
 		this.pq = pq;
 		this.service = queryService;
 		this.bindingInfo = bindingInfo;
+		this.valueFactory = valueFactory;
 	}
 	
 	private void run() {
+		//System.out.println("Running query");
 		results = service.getRowListIterator(pq);
 	}
 
@@ -52,6 +54,7 @@ public class PathQueryStatementIteration implements
 	}
 	
 	private Statement bind(List<Object> row) {
+		//System.out.println("Got row: " + row);
 		Resource subj = bindingInfo.getSubject(row);
 		URI pred = bindingInfo.getPredicate(row);
 		Value obj = bindingInfo.getObject(row);

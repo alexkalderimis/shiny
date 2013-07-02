@@ -3,8 +3,12 @@ package org.intermine.sparql;
 import java.util.Date;
 import java.util.List;
 
+import org.intermine.metadata.ClassDescriptor;
 import org.intermine.metadata.FieldDescriptor;
+import org.intermine.metadata.Model;
 import org.intermine.pathquery.Path;
+import org.intermine.pathquery.PathException;
+import org.intermine.pathquery.PathQuery;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -31,9 +35,12 @@ public class BindingInfo {
 		this.pred = pred;
 		this.objPath = objPath;
 		this.objIdx = objIdx;
-		this.idField =
-				objPath.getModel().getClassDescriptorByName("InterMineObject")
-				.getFieldDescriptorByName("id");
+		Model m = objPath.getModel();
+		if (m == null) throw new IllegalArgumentException("No model!!");
+		ClassDescriptor cd = m.getClassDescriptorByName("org.intermine.model.InterMineObject");
+		if (cd == null) throw new IllegalStateException("Could not find IMO");
+		
+		this.idField = cd.getFieldDescriptorByName("id");
 	}
 	
 	public URI getPredicate(List<Object> row) {
@@ -70,5 +77,13 @@ public class BindingInfo {
 				throw new RuntimeException("Unrepresentable value");
 			}
 		}
+	}
+
+	public static BindingInfo create(ValueFactory values, PathQuery pq,
+			Resource subj, URI pred, Value obj) throws PathException {
+		int subjIdx = 0, objIdx = 1;
+		Path subjPath = pq.makePath(pq.getView().get(subjIdx));
+		Path objPath = pq.makePath(pq.getView().get(objIdx));
+		return new BindingInfo(values, subjPath, subjIdx, pred, objPath, objIdx);
 	}
 }

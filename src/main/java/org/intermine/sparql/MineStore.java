@@ -25,15 +25,23 @@ public class MineStore extends SailBase {
 
 	private String uri;
 	private ServiceFactory serviceFactory;
+	final private String prefix;
 
 	public MineStore(String serviceUri) {
+		this.prefix = serviceUri + "/classes/";
 		this.uri = serviceUri;
 		this.serviceFactory = new ServiceFactory(uri);
 	}
 	
 	@Override
 	public ValueFactory getValueFactory() {
-		return new ValueFactoryImpl();
+		// TODO: we need an actual mine native value factory.
+		return new ValueFactoryImpl() {
+			@Override
+			public URI createURI(String uriStr) {
+				return super.createURI(prefix + uriStr);
+			}
+		};
 	}
 
 	@Override
@@ -44,8 +52,7 @@ public class MineStore extends SailBase {
 
 	@Override
 	protected SailConnection getConnectionInternal() throws SailException {
-		// TODO Auto-generated method stub
-		return null;
+		return new InterMineConnection(uri, uri, getValueFactory());
 	}
 
 	@Override

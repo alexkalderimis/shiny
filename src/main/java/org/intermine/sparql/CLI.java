@@ -1,5 +1,6 @@
 package org.intermine.sparql;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +11,24 @@ import org.intermine.metadata.CollectionDescriptor;
 import org.intermine.metadata.Model;
 import org.intermine.metadata.ReferenceDescriptor;
 import org.intermine.webservice.client.core.ServiceFactory;
+import org.openrdf.query.BooleanQuery;
+import org.openrdf.query.GraphQuery;
+import org.openrdf.query.MalformedQueryException;
+import org.openrdf.query.Query;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.QueryLanguage;
+import org.openrdf.query.TupleQuery;
+import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.query.resultio.BooleanQueryResultFormat;
+import org.openrdf.query.resultio.BooleanQueryResultWriter;
+import org.openrdf.query.resultio.QueryResultIO;
+import org.openrdf.query.resultio.text.csv.SPARQLResultsCSVWriter;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.sail.SailRepository;
+import org.openrdf.rio.RDFHandler;
+import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.turtle.TurtleWriter;
+import org.openrdf.sail.SailException;
 
 public class CLI {
 
@@ -35,8 +54,8 @@ public class CLI {
 		final String servicePrefix = arguments.get(0);
 		final ServiceFactory sf = new ServiceFactory(servicePrefix);
 		final Model m = sf.getModel();
-		out.println("Prefix(:=<" + servicePrefix + "classes>)");
-		out.println("Ontology(<" + servicePrefix + "classes>");
+		out.println("Prefix(:=<" + servicePrefix + "classes/>)");
+		out.println("Ontology(<" + servicePrefix + "classes/>");
 		for (ClassDescriptor cd: m.getClassDescriptors()) {
 			final String cName = cd.getSimpleName();
 			out.println("  Declaration( Class( :" + cName + " ))");
@@ -88,8 +107,54 @@ public class CLI {
 	}
 	
 	private static void runQuery(List<String> arguments) {
-		final String query = arguments.get(0);
+		final String serviceUrl = arguments.get(0);
+		final String query = arguments.get(1);
+
+		System.out.println("Mine is " + serviceUrl);
 		System.out.println("Query is " + query);
+		
+		MineStore store = new MineStore(serviceUrl);
+		try {
+			SailRepository rep = new SailRepository(store);
+			store.initialize();
+			Query probTQ = rep.getConnection().prepareTupleQuery(QueryLanguage.SPARQL, query);
+			if (probTQ instanceof TupleQuery) {
+				SPARQLResultsCSVWriter handler = new SPARQLResultsCSVWriter(System.out);
+				((TupleQuery) probTQ).evaluate(handler);
+			} else if (probTQ instanceof GraphQuery) {
+				RDFHandler createWriter = new TurtleWriter(System.out);
+				((GraphQuery) probTQ).evaluate(createWriter);
+			} else if (probTQ instanceof BooleanQuery) {
+				BooleanQueryResultWriter createWriter = QueryResultIO
+						.createWriter(BooleanQueryResultFormat.TEXT, System.out);
+				boolean evaluate = ((BooleanQuery) probTQ).evaluate();
+				createWriter.handleBoolean(evaluate);
+			}
+		} catch (SailException e) {
+			System.err.println("ERROR:");
+			e.printStackTrace(System.err);
+		} catch (MalformedQueryException e) {
+			System.err.println("ERROR:");
+			e.printStackTrace(System.err);
+		} catch (RepositoryException e) {
+			System.err.println("ERROR:");
+			e.printStackTrace(System.err);
+		} catch (TupleQueryResultHandlerException e) {
+			System.err.println("ERROR:");
+			e.printStackTrace(System.err);
+		} catch (QueryEvaluationException e) {
+			System.err.println("ERROR:");
+			e.printStackTrace(System.err);
+		} catch (RDFHandlerException e) {
+			System.err.println("ERROR:");
+			e.printStackTrace(System.err);
+		} catch (Throwable t) {
+			System.err.println("ERROR:");
+			t.printStackTrace(System.err);
+		} finally {
+			System.out.println("done");
+			System.exit(0);
+		}
 	}
 
 }

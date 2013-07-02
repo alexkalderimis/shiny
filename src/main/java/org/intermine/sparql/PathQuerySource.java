@@ -2,6 +2,7 @@ package org.intermine.sparql;
 
 import info.aduna.iteration.CloseableIteration;
 
+import org.intermine.pathquery.PathException;
 import org.intermine.pathquery.PathQuery;
 import org.intermine.webservice.client.core.ServiceFactory;
 import org.openrdf.model.Resource;
@@ -34,8 +35,15 @@ public class PathQuerySource implements TripleSource {
 	public CloseableIteration<? extends Statement, QueryEvaluationException> getStatements(
 			Resource subj, URI pred, Value obj, Resource... contexts)
 			throws QueryEvaluationException {
+		//System.out.println("Getting statements for " + subj + " " + pred + " " + obj);
 		PathQuery pq = getBuilder().build(subj, pred, obj);
-		return new PathQueryIteration(pq, services.getQueryService());
+		BindingInfo bi;
+		try {
+			bi = BindingInfo.create(values, pq, subj, pred, obj);
+		} catch (Exception e) {
+			throw new QueryEvaluationException(e);
+		}
+		return new PathQueryStatementIteration(pq, services.getQueryService(), values, bi);
 	}
 
 	@Override

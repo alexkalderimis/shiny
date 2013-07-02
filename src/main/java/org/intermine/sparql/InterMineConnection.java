@@ -218,7 +218,13 @@ public class InterMineConnection implements SailConnection {
 			Resource subj, URI pred, Value obj, boolean includeInferred, Resource... contexts)
 			throws SailException {
 		PathQuery pq = buildPathQuery(subj, pred, obj);
-		final PathQueryStatementIteration pqi = new PathQueryStatementIteration(pq, getQueryService());
+		BindingInfo bi;
+		try {
+			bi = BindingInfo.create(values, pq, subj, pred, obj);
+		} catch (PathException e) {
+			throw new SailException(e);
+		}
+		final PathQueryStatementIteration pqi = new PathQueryStatementIteration(pq, getQueryService(), values, bi);
 		return new CloseableIteratorIteration<Statement, SailException>() {
 			
 			@Override
